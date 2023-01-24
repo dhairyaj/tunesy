@@ -69,6 +69,8 @@ function MusicPlayer() {
         }
     }, [volume]);
 
+    // Set the music volume after 300ms of user's modification of volume
+    // Basically once the user sets the volume, add a delay of 300ms to set the volume state to prevent multiple calls
     const debouncedAdjustedVolume = useCallback(
         debounce(volume => {
             spotifyApi.setVolume(volume).catch((err) => {});

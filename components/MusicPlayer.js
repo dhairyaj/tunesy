@@ -1,4 +1,4 @@
-import { currentSongIdState, isPlayingState } from '@/atoms/songAtom';
+import { currentSongIdState, isPlayingState, isShuffleState } from '@/atoms/songAtom';
 import useSongInfo from '@/hooks/useSongInfo';
 import useSpotify from '@/hooks/useSpotify';
 import { useSession } from 'next-auth/react';
@@ -25,6 +25,9 @@ function MusicPlayer() {
     // Set/Get the volume of the player
     const [volume, setVolume] = useState(50);
 
+    // Get/Set state for playlist shuffle
+    const [shuffleToggle, setShuffleToggle] = useRecoilState(isShuffleState);
+
     // Fetch songInfo using custom hook useSongInfo
     const songInfo = useSongInfo();
 
@@ -37,6 +40,7 @@ function MusicPlayer() {
 
             spotifyApi.getMyCurrentPlaybackState().then(data => {
                 setIsPlaying(data.body?.is_playing);
+                setShuffleToggle(data.body?.shuffle_state);
             })
         }
     }
@@ -53,6 +57,38 @@ function MusicPlayer() {
             }
         });
     };
+
+    // Handle Play previous track in playlist
+    const handlePrevious = () => {
+        spotifyApi.skipToPrevious();
+        setTimeout(() => {
+            spotifyApi.getMyCurrentPlayingTrack().then(data => {
+                setCurrentSongId(data.body.item.id);
+            })
+        }, 600);
+    };
+
+    // Handle Play next track in the playlist
+    const handleNext = () => {
+        spotifyApi.skipToNext();
+        setTimeout(() => {
+            spotifyApi.getMyCurrentPlayingTrack().then(data => {
+                setCurrentSongId(data.body.item.id);
+            })
+        }, 600);
+    };
+
+    // Toggle shuffle for user playback
+    const handleShuffle = () => {
+        spotifyApi.setShuffle(!shuffleToggle).then(() => {
+            setShuffleToggle(!shuffleToggle);
+        })
+    };
+
+    // Handle track repeat
+    // const handleRepeat = () => {
+    //     spotifyApi.setRepeat()
+    // }
 
     // Fetch the song info as component mounts
     useEffect(() => {
@@ -73,7 +109,7 @@ function MusicPlayer() {
     // Basically once the user sets the volume, add a delay of 300ms to set the volume state to prevent multiple calls
     const debouncedAdjustedVolume = useCallback(
         debounce(volume => {
-            spotifyApi.setVolume(volume).catch((err) => {});
+            spotifyApi.setVolume(volume).catch((err) => { });
         }, 300), []
     );
 
@@ -90,14 +126,10 @@ function MusicPlayer() {
 
             {/* Song controls */}
             <div className='flex items-center justify-evenly'>
-                <ArrowsRightLeftIcon className='musicControl' />
-                <BackwardIcon className='musicControl'
-                    onClick={() => spotifyApi.skipToPrevious()}
-                />
+                <ArrowsRightLeftIcon className={`musicControl ${shuffleToggle ? "text-red-700 transform scale-150" : ""}`} onClick={handleShuffle} />
+                <BackwardIcon className='musicControl' onClick={handlePrevious} />
                 {isPlaying ? (<PauseCircleIcon className='musicControl w-10 h-10' onClick={handlePlayPause} />) : (<PlayCircleIcon className='musicControl w-10 h-10' onClick={handlePlayPause} />)}
-                <ForwardIcon className='musicControl'
-                    onClick={() => spotifyApi.skipToNext()}
-                />
+                <ForwardIcon className='musicControl' onClick={handleNext} />
                 <ArrowPathIcon className='musicControl' />
             </div>
 

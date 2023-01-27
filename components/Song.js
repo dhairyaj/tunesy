@@ -1,4 +1,4 @@
-import { currentSongIdState, isPlayingState } from '@/atoms/songAtom';
+import { currentSongIdState, isPlayingState, isShuffleState } from '@/atoms/songAtom';
 import useSpotify from '@/hooks/useSpotify'
 import { millisToMinutesAndSeconds } from '@/lib/duration';
 import React from 'react'
